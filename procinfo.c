@@ -32,8 +32,29 @@
 
 int main(){
 	
+	printf("\n\n========================================\n");
 	printf("Running process #%d", getpid());
 	printf(" with parent #%d\n", getppid());
+
+	FILE * pFile;
+	char * pName;
+	char * pPath;
+	
+	// sprintf(); is the way to go for concatenation.
+	//fprintf(pPath, "/proc/%d", getpid());
+
+	pFile = fopen (pPath,"r");
+
+	if (pFile != NULL) {
+		fscanf(pFile, "Name:\t%[^\n]\n", *pName);
+		printf("%s", &pName);		
+		fclose (pFile);
+	} else {	
+		printf("Failed while opening: /proc\n");	
+	}
+	
+	printf("\n========================================\n\n");
+	
 }
 
 
