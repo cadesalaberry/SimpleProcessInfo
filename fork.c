@@ -20,7 +20,9 @@ int spawn (char** theArgs){
 			printf("Spawning child #%d, launching: \"", getpid());
 			printf("%s\"\n", theArgs[0]);
 
-			exit(execvp(theArgs[0], theArgs));
+			execvp(theArgs[0], theArgs);
+			printf("Error found. Aborting...\n");
+			exit(-1);
 			break;
 		}
 		default:{
