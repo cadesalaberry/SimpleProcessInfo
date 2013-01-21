@@ -1,91 +1,59 @@
-// Standard Library.
-#include <stdlib.h>
+#include <stdlib.h>			// Standard Library.
+#include <unistd.h>			// Needed to get PID of a process.
+#include <stdio.h>			// Needed for I/O to stdout.
+#include <sys/wait.h>		// Needed for wait().
+#include <string.h>			// Needed for strlen().
 
-// Needed to get PID of a process.
-#include <unistd.h>
-#include <string.h>
-// Needed for I/O to stdout.
-#include <stdio.h>
-
-/****************************************
- *              ABOUT PID.              *
- ****************************************/
-
-// Always successfully returns process ID of caller.
-//pid_t getpid(void);
-
-// Always successfully returns proces ID of parent of caller.
-//pid_t getppid(void);
-
-/****************************************
- *      ABOUT ENVIRONEMNT VARIABLES.    *
- ****************************************/
-
-// Returns string of env. var. of process "name". (or NULL)
-//char *getenv(const char *name);
-
-// Returns accordingly: 0=SUCESS, 1=ERROR
-//int setenv(const char *name, const char *value, int overwrite); 
-
-// Returns accordingly: 0=SUCESS, 1=ERROR
-//int unsetenv(const char *name);
-int addValueToFieldInFile(char * field, FILE * file, char * buffer);
+// Gets the environnement variables.
 extern char ** environ;
 
 int main() {
 
-	  // Gets the program signature.
-	  pid_t pid = getpid();
-	  pid_t ppid = getppid();
+	int    i = 0;
+	FILE * file;
+	char   temp[6969];
+	char   pPath[69];
+	char * values[69];
+	char * fields[] = {"Name:", "State:", "VmStk:",
+						"voluntary_ctxt_switches:",
+						"nonvoluntary_ctxt_switches:"};  
 
-	  FILE * file;
-	  char * pPath;
-	  char report[6969];
-	  char * field;
-	  char * buffer;
-	  
-	  // Gets the path the the status file.
-	  sprintf(pPath, "/proc/%d/status", pid);
+	printf("Running process #%d", getpid());
+	printf(" with parent #%d\n" , getppid());
+	
+	// Gets the path the the status file.
+	sprintf(pPath, "/proc/%d/status", getpid());
 
-	  file = fopen(pPath, "r");
-	  if (file != NULL) {
-			printf("Reading: %s\n", pPath);
-
-			//strcat(report, addValueToFieldInFile("Name:", file));
-
-			addValueToFieldInFile("Name:", file, buffer);
-			printf("%s", buffer);
-			// Get the values in there
-			fclose(file);
-	  } else {
-			printf("Failed while opening: %s\n", pPath);
-	  }
-
-	  //  is the way to go for concatenation.
-	  //fprintf(pPath, "/proc/%d", getpid());
-
-	  printf("\n\n========================================\n");
-	  printf("Running process #%d", pid);
-	  printf(" with parent #%d\n", ppid);
-	  printf("%s", report);
-	  printf("\n========================================\n\n");
-
-}
-
-int addValueToFieldInFile(char * field, FILE * file, char * buffer) {
-
-	  buffer = malloc(sizeof (char)* 6969);
-	   while (!feof(file)) {
+	// Tries opening the file.
+	file = fopen(pPath, "r");
+	if (file != NULL) {
+		
+		printf("Reading file: %s\n", pPath);
+		while (!feof(file)) {
 			
-			fscanf(file, "%s", buffer);
+			// Gets the next word in the file.
+			fscanf(file, "%s", temp);
 			
-			printf("Looking at: %s\n", buffer);
-			//exit(1);
-			if (strcmp(buffer, field) == 0) {
-				  strcat(field, " ");
-				  fscanf(file, "%s", buffer);
-				  return 1;
+			for (i = 0; i < 5; i++){
+				
+				// Checks if it is one of the desired field.
+				if(strcmp(temp, fields[i]) == 0){
+					
+					fscanf(file, "%s", temp);
+					values[i] = temp;
+					printf("%s\t\t\t\t%s\n", fields[i], values[i]);
+				}
 			}
-	  }
-	  return -1;
+		}
+		fclose(file);
+		
+	} else {
+		printf("Failed while opening: %s\n", pPath);
+	}
+	
+	printf("Environment variables:\n"); 
+	i = 0; while(environ[i]){ printf("%s\n", environ[i++]); }
+	
+	return 0;
 }
+
