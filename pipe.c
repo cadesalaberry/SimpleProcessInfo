@@ -3,50 +3,62 @@
 #include <stdio.h>			// Needed for I/O to stdout.
 #include <sys/wait.h>		// Needed for wait().
 #include <string.h>			// Needed for strlen().
-#define BUFFER_SIZE 6969
 
 int main(){
 	
 	int pipefd[2];
-	int nBytesRead;														// Stores the number of bytes read in the pipe
-	pid_t childPid;														// Stores the PID of the child
-	char * cmdChild[] = {"ls", 0};										// Stores the command to be exec by the child
-	char   bufferR[BUFFER_SIZE];										// Used as the read pipe buffer
+	pid_t childPid;
+	char * cmdChild[] = {"ls", 0};
+	char * cmdParent[] = {"wc", "-l", 0};
 	
 	if(pipe(pipefd) < 0){
-		fprintf(stderr, "Error while creating the pipe.");
-	}
-	switch (childPid = fork()){
-	
+		fprintf(stderr, "Error while creating the pipe.\n");
+		
+	} else {
+		switch (childPid = fork()){
 			case -1:{
-				printf("\nforking %d failed\n", getppid());
+				printf("\nForking %d failed.\n", getppid());
 				break;
 			}
 			case  0:{
+				// Closes the input of the pipe for it is not used.
+				close(pipefd[0]);
 				
-				close(pipefd[0]);										// Closes the input of the pipe
 				printf("I am da child #%d and I execute ", getpid());
 				printf("\"ls\".\n");
 				printf("I am writing it to the output of the pipe.\n");
-
-				dup2(pipefd[1], 1);										// Makes stdin redirect to the pipe
 				
-				execvp(cmdChild[0], cmdChild);							// executes the command as the child
-                //write(pipefd[1], cmdChild[0], (strlen(cmdChild[0])+1));	// Writes the output on the out of the pipe
-				exit(0);
+				// Makes stdin redirect to the pipe.
+				dup2(pipefd[1], 1);
+				
+				execvp(cmdChild[0], cmdChild);
+				printf("Error found. Aborting...\n");
+				exit(-1);
 				break;
 			}
 			default:{
+				// Waits for the child to be done.
 				wait(NULL);
 				
-				close(pipefd[1]);											// Closes the output of the pipe
-				printf("Back to da parent #%d.\n", getpid());
-                nBytesRead = read(pipefd[0], bufferR, sizeof(bufferR));	// Reads what is in the pipe
-                printf("Received %d bytes: %s", nBytesRead, bufferR);
-                
-                
+				// Closes the output of the pipe for it is not used.
+				close(pipefd[1]);
+		
+				printf("Back to da parent #%d.\n", getpid()); printf(
+				"The command \"wc\" has counted the following "); 
+				printf("number of lines:\n");					
+				
+				/* If no FILE argument is specified,
+				 * wc will use the stdin as input.
+				 * Thus we redirect the pipe to stdin
+				 */
+				 dup2(pipefd[0],0);
+			
+				execvp(cmdParent[0], cmdParent);
+				printf("Error found. Aborting...\n");
+				exit(-1);
 				break;
 			}
 		}
-	return 0;
+	}
+	return -1;
 }
